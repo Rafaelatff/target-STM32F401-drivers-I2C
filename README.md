@@ -173,3 +173,9 @@ Then, we need to calculate and program the CCR value in the CCR fields of CCR re
 ![image](https://user-images.githubusercontent.com/58916022/209482454-8121ff7f-f5a2-4dc6-89c5-9cf103d05fb5.png)
 
 
+By creating a API to help us calculate the value, we need to check the following register> RCC -> CFGR -> SWS.
+
+![image](https://user-images.githubusercontent.com/58916022/209487732-9b4de48d-43f3-436e-a52a-11c04ae940d8.png)
+
+(PAREI EM 189)
+
