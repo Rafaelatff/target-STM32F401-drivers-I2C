@@ -160,11 +160,13 @@ uint8_t I2C_GetFlagStatus(I2C_RegDef_t *pI2Cx, uint32_t FlagName);
 __attribute__((weak)) void I2C_ApplicationEventCallback(I2C_Handle_t *pI2CHandle, uint8_t AppEvent);
 ```
 
-The serial clock is configured by following those registers:
+The serial clock is configured by following those registers. We need to configure the bit 15 of CCR register (SM or FM).Then, in the FREQ fields of CR2 register, we need to configure with the frequency of APB1. In our case, 16 MHz.
 
 ![image](https://user-images.githubusercontent.com/58916022/209482399-92673a1c-8f47-45a3-9f65-dc8a0f904105.png)
 
 ![image](https://user-images.githubusercontent.com/58916022/209482441-464d0237-0403-4100-83db-9434eda53b88.png)
+
+Then, we need to calculate and program the CCR value in the CCR fields of CCR register. 10 uS = 100 kHz. Considering 50% duty cicle (Thigh = Tlow), and TPCLK1 = 62.5 x10^-9 we have a value (for CCR) of 80 (or 0x50). In fast mode, the duty cycle MUST be configured. There are 2 options, being with Tlow = 2Thigh OR Tlow - 1.8Thigh.
 
 ![image](https://user-images.githubusercontent.com/58916022/209482375-072ed70f-2028-4aa3-b306-9ad7275d1951.png)
 
