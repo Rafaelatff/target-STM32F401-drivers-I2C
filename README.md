@@ -1,4 +1,4 @@
-# -target-STM32F401-drivers-I2C
+# target-STM32F401-drivers-I2C
 This project uses STM32CubeIDE and it's a program created to practice my C habilities during the course 'Mastering Microcontroller and Embedded Driver Development' from FastBit Embedded Brain Academy. I am using a NUCLEO-F401RE board.
 
 ## theory
@@ -159,6 +159,7 @@ uint8_t I2C_GetFlagStatus(I2C_RegDef_t *pI2Cx, uint32_t FlagName);
  */
 __attribute__((weak)) void I2C_ApplicationEventCallback(I2C_Handle_t *pI2CHandle, uint8_t AppEvent);
 ```
+**CLOCK CONFIGURATION**
 
 To find out the clock source for the I2C peripheral, we have the reference manual that provides the clock tree:
 
@@ -216,6 +217,41 @@ When using 10-bit slave addres, the bit fields ADD0, ADD[7:1] and ADD[9:8] are u
 In the I2C->OAR1 register -> ADDMODE bit field, has reset value of 0, being 7-bit slave mode. There is no need of configuring, unless we are working with 10-bit mode (then ADDMODE must be 1). Also, the reference manual ask that the Bit 14 should always be kept at 1 by software.
 
 ![image](https://user-images.githubusercontent.com/58916022/209550841-45e0bbad-65c2-444b-ab72-995b379ecef8.png)
+
+**SEND DATA**
+
+![image](https://user-images.githubusercontent.com/58916022/209558387-65dab394-6eed-474b-8bb1-7c48aae2fc47.png)
+
+Fist we generate the START condition (pI2Cx->CR1 |= (1 << I2C_CR1_START);). Then confirm that start generation is completed by checking the SB flag in the SR1. To easy that, we create in i2c header file the section for all flags in SR1 register.
+
+![image](https://user-images.githubusercontent.com/58916022/209560435-5af0876c-2cc0-47fb-b5d5-4e07a435be96.png)
+
+Then we need to confirm that start generation is completed by checking the SB flag in the SR1 register (until SB is cleared SCL will be stretched (pulled to LOW)). Come FLAG macros were created to help us.
+
+![image](https://user-images.githubusercontent.com/58916022/209561193-c7c69172-756c-431e-8b71-ff9654bdaeb7.png)
+
+And the function to return the flag is similar to the one created for SPI.
+
+![image](https://user-images.githubusercontent.com/58916022/209561570-1b1cad43-b4d4-4fbe-a65c-b76c5bbc75e2.png)
+
+Now we need to send the address of the slave with r/nw bit set to w(0) (total 8 bits). A private function were created for that (I2C_ExecuteAddressPhaseWrite).
+
+![image](https://user-images.githubusercontent.com/58916022/209561824-12f78a95-b268-4ed6-b1d5-7b581ea50e30.png)
+
+Now we need to confirm that address phase is completed by checking the ADDR flag in teh SR1. This is done by sending the I2C_FLAG_ADDR parameter to I2C_GetFlagStatus function.
+
+Then we need to clear the ADDR flag according to its software sequence (Note: Until ADDR is cleared SCL will be stretched (pulled to LOW)). A function was created for that.
+
+![image](https://user-images.githubusercontent.com/58916022/209562287-c2c39383-2c7d-4c81-a18e-b35cf5d48637.png)
+
+Now we are ready to send the data. We are going to send the data until len becomes 0.
+
+![image](https://user-images.githubusercontent.com/58916022/209562433-51e9303f-51f3-4391-96ef-9b5140f02109.png)
+
+Now, when Len becomes zero we wait for TXE=1 and BTF=1 before generating the STOP condition. Note: TXE=1 , BTF=1 , means that both SR and DR are empty and next transmission should begin. When BTF=1 SCL will be stretched (pulled to LOW).
+We pass the FLAGs I2C_FLAG_TXE and I2C_FLAG_BTF to I2C_GetFlagStatus before gerenating STOP conditions.
+
+
 
 
 
