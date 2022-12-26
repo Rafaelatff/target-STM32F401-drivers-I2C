@@ -242,7 +242,7 @@ Now we need to confirm that address phase is completed by checking the ADDR flag
 
 Then we need to clear the ADDR flag according to its software sequence (Note: Until ADDR is cleared SCL will be stretched (pulled to LOW)). A function was created for that.
 
-![image](https://user-images.githubusercontent.com/58916022/209562287-c2c39383-2c7d-4c81-a18e-b35cf5d48637.png)
+![image](https://user-images.githubusercontent.com/58916022/209580884-c3288e8a-4a0b-453a-85f3-5bbfc8e6902c.png)
 
 Now we are ready to send the data. We are going to send the data until len becomes 0.
 
@@ -251,7 +251,11 @@ Now we are ready to send the data. We are going to send the data until len becom
 Now, when Len becomes zero we wait for TXE=1 and BTF=1 before generating the STOP condition. Note: TXE=1 , BTF=1 , means that both SR and DR are empty and next transmission should begin. When BTF=1 SCL will be stretched (pulled to LOW).
 We pass the FLAGs I2C_FLAG_TXE and I2C_FLAG_BTF to I2C_GetFlagStatus before gerenating STOP conditions.
 
+## theory - 2
 
+198. I2C pull up resistance , rise time and bus capacitance discussion
+
+## coding - continuation
 
 
 
