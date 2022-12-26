@@ -207,6 +207,15 @@ Values less than 4 doesn't change the clock source. The same for AHB prescaler w
 
 ![image](https://user-images.githubusercontent.com/58916022/209548411-89f6a4bd-5adf-468d-a3e6-0805f3434f63.png)
 
+**SLAVE ADDRESS**
+
+When using 10-bit slave addres, the bit fields ADD0, ADD[7:1] and ADD[9:8] are used. When in 7-bit slave address mode, only the bit field ADD[7:1] is used.
+
+![image](https://user-images.githubusercontent.com/58916022/209550418-20160595-5302-4510-aeec-404a20d5fcaf.png)
+
+In the I2C->OAR1 register -> ADDMODE bit field, has reset value of 0, being 7-bit slave mode. There is no need of configuring, unless we are working with 10-bit mode (then ADDMODE must be 1). Also, the reference manual ask that the Bit 14 should always be kept at 1 by software.
+
+![image](https://user-images.githubusercontent.com/58916022/209550841-45e0bbad-65c2-444b-ab72-995b379ecef8.png)
 
 
 
