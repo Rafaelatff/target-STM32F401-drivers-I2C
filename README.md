@@ -160,6 +160,14 @@ uint8_t I2C_GetFlagStatus(I2C_RegDef_t *pI2Cx, uint32_t FlagName);
 __attribute__((weak)) void I2C_ApplicationEventCallback(I2C_Handle_t *pI2CHandle, uint8_t AppEvent);
 ```
 
+To find out the clock source for the I2C peripheral, we have the reference manual that provides the clock tree:
+
+![image](https://user-images.githubusercontent.com/58916022/209548848-a6c0efaa-ba8b-43af-a7a9-436dbf8708cd.png)
+
+To check which APBx is used we can check the microcontroller datasheet:
+
+![image](https://user-images.githubusercontent.com/58916022/209549046-5dab90f2-a652-4281-a5e4-cbda5e3dbf24.png)
+
 The serial clock is configured by following those registers. We need to configure the bit 15 of CCR register (SM or FM).Then, in the FREQ fields of CR2 register, we need to configure with the frequency of APB1. In our case, 16 MHz.
 
 ![image](https://user-images.githubusercontent.com/58916022/209482399-92673a1c-8f47-45a3-9f65-dc8a0f904105.png)
@@ -173,9 +181,33 @@ Then, we need to calculate and program the CCR value in the CCR fields of CCR re
 ![image](https://user-images.githubusercontent.com/58916022/209482454-8121ff7f-f5a2-4dc6-89c5-9cf103d05fb5.png)
 
 
-By creating a API to help us calculate the value, we need to check the following register> RCC -> CFGR -> SWS.
+By creating a API to help us calculate the value, we need to check the RCC register.
 
-![image](https://user-images.githubusercontent.com/58916022/209487732-9b4de48d-43f3-436e-a52a-11c04ae940d8.png)
+![image](https://user-images.githubusercontent.com/58916022/209546644-0461a290-029e-42b7-80e3-297077003da7.png)
 
-(PAREI EM 189)
+To help during the calcs of for the SCL register's value, we created a function that will read the source of clock configured (RCCGetPCLK1Value) (RCC->SWS), and another one that will calculate the PLL value if the same is being used (RCC_GetPLLOutputClock). This last one need to be implemented.
+
+![image](https://user-images.githubusercontent.com/58916022/209546528-b69116cb-da36-420e-ba98-732700f1335d.png)
+
+![image](https://user-images.githubusercontent.com/58916022/209546254-25d11eae-a2a6-4368-8cef-e97aac429121.png)
+
+We also need to check if there is a AHB prescaler configured. for that, we need to check the bits 7:4, the HPRE (AHB prescaler):
+
+![image](https://user-images.githubusercontent.com/58916022/209547136-3591794d-b358-4514-b309-9137327a7518.png)
+
+Values less than 8 doesn't change the clock source. We create an array that holds the values for the AHB Prescaler and make that the variable ´ahbp´ have its value minus 8 (to compensate the first 8 values that makes ahbp equal to 1).
+
+![image](https://user-images.githubusercontent.com/58916022/209547665-ce34095c-dce0-49b3-919c-02f474b8eb9b.png)
+
+Now we are going to check the bit fields for APB prescaler:
+
+![image](https://user-images.githubusercontent.com/58916022/209548017-80afaa78-2e02-4311-a8ec-fdb927d207a8.png)
+
+Values less than 4 doesn't change the clock source. The same for AHB prescaler was made.
+
+![image](https://user-images.githubusercontent.com/58916022/209548411-89f6a4bd-5adf-468d-a3e6-0805f3434f63.png)
+
+
+
+
 
