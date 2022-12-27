@@ -218,7 +218,7 @@ In the I2C->OAR1 register -> ADDMODE bit field, has reset value of 0, being 7-bi
 
 ![image](https://user-images.githubusercontent.com/58916022/209550841-45e0bbad-65c2-444b-ab72-995b379ecef8.png)
 
-**SEND DATA**
+## part 1 - master sending data
 
 ![image](https://user-images.githubusercontent.com/58916022/209558387-65dab394-6eed-474b-8bb1-7c48aae2fc47.png)
 
@@ -310,7 +310,7 @@ void I2C_Init(I2C_Handle_t *pI2CHandle){
 }
 ```
 
-## execise
+## execise 1
 
 In the source code '008i2c-master-tx-testing.c' the plan was just to spit the I2C slave address and clock. No need of a slave's acknolege. Later I plan to comunicate with another board (not an arduino).
 
@@ -323,6 +323,77 @@ I also notice that MSL bit (master 1 or slave 0)  could't be set. But since data
 ## results
 
 ![WhatsApp Image 2022-12-27 at 00 09 17](https://user-images.githubusercontent.com/58916022/209659832-865a9b1e-ec15-41a0-9654-672e1dfebe4f.jpeg)
+
+## part 2 - master receiving data
+
+```
+void I2C_MasterReceiveData(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, uint8_t Len, uint8_t SlaveAddr){
+	// 1. Generate the Start Condition
+	I2C_GenerateStartCondition(pI2CHandle->pI2Cx);
+
+	// 2. Confirm that start generation is completed by checking the SB flag in the SR1 register
+	// Note: Until SB is cleared SCL will be stretched (pulled to low)
+	while(!I2C_GetFlagStatus(pI2CHandle->pI2Cx,I2C_FLAG_SB));
+
+	// 3. Send the address of the slave with r/nw bit set to R(1)
+	I2C_ExecuteAddressPhaseRead(pI2CHandle->pI2Cx,SlaveAddr);
+
+	// 4. Wait until address phase is completed by checking the ADDR flag in SR1
+	while(!I2C_GetFlagStatus(pI2CHandle->pI2Cx,I2C_FLAG_ADDR));
+
+	// 5.a Read only 1 byte
+	if(Len == 1){
+		// Disable Acking
+		I2C_AckControl(pI2CHandle->pI2Cx, DISABLE);
+
+		// Generate STOP condition
+		I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
+
+		// Clear the ADDR flag
+		while(!I2C_GetFlagStatus(pI2CHandle->pI2Cx,I2C_FLAG_ADDR));
+
+		// Wait until RXNE becomes 1
+		while(! I2C_GetFlagStatus(pI2CHandle->pI2Cx,I2C_FLAG_RXNE)); //Wait till RXNE is set
+
+		// Read data in Rx buffer
+		*pRxBuffer = pI2CHandle->pI2Cx->DR;
+
+		return;
+	}
+	// 5.b Read more than 1 byte
+	if(Len > 1){
+		// Wait until RXNE becomes 1
+		while(! I2C_GetFlagStatus(pI2CHandle->pI2Cx,I2C_FLAG_RXNE)); //Wait till RXNE is set
+
+		// read data in Rx buffer until Len becomes 0
+		for (uint32_t i = Len; i>0 ; i--){
+			// Wait until RXNE becomes 1
+
+			if (i ==2){
+				// Disable Acking,
+				I2C_AckControl(pI2CHandle->pI2Cx, DISABLE);
+
+				// Generate STOP condition
+				I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
+			}
+			// Read data in Rx buffer
+			*pRxBuffer = pI2CHandle->pI2Cx->DR;
+
+			// Increemt the buffer address
+			pRxBuffer++;
+		}
+	}
+	// Re-enable ack
+	if(pI2CHandle->I2C_Config.I2C_ACKControl == I2C_ACK_ENABLE){
+		I2C_AckControl(pI2CHandle->pI2Cx, I2C_ACK_ENABLE);
+	}
+	return;
+}
+```
+## execise 2 
+
+Let's connect the I2C1 to another I2C from same microcontroller (without PUPD) and try to communicate them.
+
 
 
 
