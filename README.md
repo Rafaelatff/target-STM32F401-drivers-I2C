@@ -257,6 +257,72 @@ We pass the FLAGs I2C_FLAG_TXE and I2C_FLAG_BTF to I2C_GetFlagStatus before gere
 
 ## coding - continuation
 
+The order os the calls in I2C_Init were changed to follow the same as the teacher. The Trise were added.
+
+```
+void I2C_Init(I2C_Handle_t *pI2CHandle){
+	uint32_t tempreg = 0 ;
+
+	//enable the clock for the i2cx peripheral
+	I2C_PeriClkCtrl(pI2CHandle->pI2Cx,ENABLE);
+
+	//configure the FREQ field of CR2
+	tempreg = 0;
+	tempreg |= RCC_GetPCLK1Value() /1000000U ;
+	pI2CHandle->pI2Cx->CR2 |=  (tempreg & 0x3F);
+
+	//program the device own address
+	tempreg = 0;
+	tempreg |= pI2CHandle->I2C_Config.I2C_DeviceAddress << 1;
+	tempreg |= ( 1 << 14); // must be kept by sw as 1
+	pI2CHandle->pI2Cx->OAR1 |= tempreg;
+
+	//CCR calculations
+	uint16_t ccr_value = 0;
+	tempreg = 0;
+	if(pI2CHandle->I2C_Config.I2C_SCLSpeed <= I2C_SCL_SPEED_SM)	{
+		//mode is standard mode
+		ccr_value = (RCC_GetPCLK1Value() / ( 2 * pI2CHandle->I2C_Config.I2C_SCLSpeed ) );
+		tempreg |= (ccr_value & 0xFFF);
+	}else{
+		//mode is fast mode
+		tempreg |= ( 1 << 15);
+		tempreg |= (pI2CHandle->I2C_Config.I2C_FMDutyCycle << 14); // must be kept by sw as 1
+		if(pI2CHandle->I2C_Config.I2C_FMDutyCycle == I2C_FM_DUTY_2)
+		{
+			ccr_value = (RCC_GetPCLK1Value() / ( 3 * pI2CHandle->I2C_Config.I2C_SCLSpeed ) );
+		}else{
+			ccr_value = (RCC_GetPCLK1Value() / ( 25 * pI2CHandle->I2C_Config.I2C_SCLSpeed ) );
+		}
+	tempreg |= (ccr_value & 0xFFF);
+	}
+	pI2CHandle->pI2Cx->CCR |= tempreg;
+
+	//TRISE Configuration
+	if(pI2CHandle->I2C_Config.I2C_SCLSpeed <= I2C_SCL_SPEED_SM){
+		//mode is standard mode
+		tempreg = (RCC_GetPCLK1Value() /1000000U) + 1 ;
+	}else{
+		//mode is fast mode
+		tempreg = ( (RCC_GetPCLK1Value() * 300) / 1000000000U ) + 1;
+	}
+	pI2CHandle->pI2Cx->TRISE |= (tempreg & 0x3F);
+}
+```
+
+## execise
+
+In the source code '008i2c-master-tx-testing.c' the plan was just to spit the I2C slave address and clock. No need of a slave's acknolege. Later I plan to comunicate with another board (not an arduino).
+
+During debug I notice that the enable ack wasn't change in the CR1 bit. Browsing the Udemy FAQ, I saw that others have same issue. Another user, posted his driver's codes here in git hub, so I could see the answer. I didn't check datasheet or reference manual, but I tested and it worked. For the solution [Oguz-Can](https://github.com/Oguz-Can/ARM-Drivers/blob/master/drivers/Src/stm32f407_i2c_driver.c). Basically, we set the ACK bit of CR1 after setting the enable bit at same register.
+
+![image](https://user-images.githubusercontent.com/58916022/209658459-f66e3b9b-4669-48c7-8869-02a1ea5e13a4.png)
+
+I also notice that MSL bit (master 1 or slave 0)  could't be set. But since data and clock leaved the pins I didn't bother. But it need to be checked.
+
+## results
+
+![WhatsApp Image 2022-12-27 at 00 09 17](https://user-images.githubusercontent.com/58916022/209659832-865a9b1e-ec15-41a0-9654-672e1dfebe4f.jpeg)
 
 
 
