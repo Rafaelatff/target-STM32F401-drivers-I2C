@@ -59,7 +59,7 @@ We create some peripheral definition macros for the I2C using the structure I2C_
 
 Still inside uC header file we created macros for the bit position definitions inside the I2C peripheral:
 
-```
+```c
 // Bit position definitions of I2C CR1 peripheral
 #define I2C_CR1_PE			0	//bit field for Peripheral enable
 #define I2C_CR1_NOSTRETCH	7	//bit field for Clock stretching disable (Slave mode)
@@ -119,7 +119,7 @@ Then we created some macros to use with the structure configuration of the I2C p
 
 Then we created the APIs for the driver:
 
-```
+```c
 /*******************************************************
  * 			API supported by this driver
  *
@@ -259,7 +259,7 @@ We pass the FLAGs I2C_FLAG_TXE and I2C_FLAG_BTF to I2C_GetFlagStatus before gere
 
 The order os the calls in I2C_Init were changed to follow the same as the teacher. The Trise were added.
 
-```
+```c
 void I2C_Init(I2C_Handle_t *pI2CHandle){
 	uint32_t tempreg = 0 ;
 
@@ -326,7 +326,7 @@ I also notice that MSL bit (master 1 or slave 0)  could't be set. But since data
 
 ## part 2 - master receiving data
 
-```
+```c
 void I2C_MasterReceiveData(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, uint8_t Len, uint8_t SlaveAddr){
 	// 1. Generate the Start Condition
 	I2C_GenerateStartCondition(pI2CHandle->pI2Cx);
